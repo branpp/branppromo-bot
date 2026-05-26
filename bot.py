@@ -5,30 +5,41 @@ import random
 TOKEN = "8241926278:AAFSqaiWkRWONyK6q3wYbKb1AYdZOp7A3Ec"
 CHAT_ID = "@branppromo"
 
-buscas = [
-    "iphone", "samsung", "xiaomi", "motorola",
-    "ssd", "monitor gamer", "notebook", "pc gamer",
-    "mouse gamer", "teclado mecanico", "headset gamer",
-    "cueca", "meia", "camisa", "camisa de time",
-    "tenis nike", "tenis adidas", "air fryer",
-    "perfume", "smart tv", "jbl", "mochila"
-]
+buscas = ["iphone", "samsung", "xiaomi", "cueca", "meia", "camisa", "air fryer", "ssd"]
 
-enviados = set()
-
-def enviar_texto(texto):
+def enviar(texto):
     requests.post(
         f"https://api.telegram.org/bot{TOKEN}/sendMessage",
         data={"chat_id": CHAT_ID, "text": texto}
     )
 
-def enviar_produto(produto):
-    nome = produto.get("title", "Produto")
-    preco = produto.get("price", "Consultar")
-    link = produto.get("permalink", "")
-    imagem = produto.get("thumbnail", "")
+enviar("✅ Bot reiniciado! Testando Mercado Livre...")
 
-    texto = f"""
+while True:
+    try:
+        pesquisa = random.choice(buscas)
+
+        resposta = requests.get(
+            "https://api.mercadolibre.com/sites/MLB/search",
+            params={"q": pesquisa, "limit": 1},
+            timeout=15
+        )
+
+        enviar(f"🔎 Buscando: {pesquisa}\nStatus API: {resposta.status_code}")
+
+        dados = resposta.json()
+        produtos = dados.get("results", [])
+
+        if not produtos:
+            enviar("⚠️ A API respondeu, mas não trouxe produtos.")
+        else:
+            produto = produtos[0]
+
+            nome = produto.get("title", "Produto")
+            preco = produto.get("price", "Consultar")
+            link = produto.get("permalink", "")
+
+            enviar(f"""
 🛍️ ACHADINHO DO MERCADO LIVRE
 
 📦 {nome}
@@ -37,53 +48,9 @@ def enviar_produto(produto):
 
 🛒 COMPRAR:
 {link}
-"""
-
-    if imagem:
-        requests.post(
-            f"https://api.telegram.org/bot{TOKEN}/sendPhoto",
-            data={
-                "chat_id": CHAT_ID,
-                "photo": imagem,
-                "caption": texto
-            }
-        )
-    else:
-        enviar_texto(texto)
-
-enviar_texto("✅ Bot ligado! Procurando produtos...")
-
-while True:
-    try:
-        pesquisa = random.choice(buscas)
-
-        resposta = requests.get(
-            "https://api.mercadolibre.com/sites/MLB/search",
-            params={"q": pesquisa, "limit": 10}
-        )
-
-        dados = resposta.json()
-        produtos = dados.get("results", [])
-
-        if not produtos:
-            print(f"Nenhum produto encontrado para: {pesquisa}")
-            time.sleep(10)
-            continue
-
-        random.shuffle(produtos)
-
-        for produto in produtos[:3]:
-            produto_id = produto.get("id")
-
-            if produto_id in enviados:
-                continue
-
-            enviados.add(produto_id)
-            enviar_produto(produto)
-
-            time.sleep(10)
+""")
 
     except Exception as erro:
-        enviar_texto(f"⚠️ Erro no bot: {erro}")
+        enviar(f"⚠️ ERRO REAL: {erro}")
 
-    time.sleep(10)
+    time.sleep(20)
