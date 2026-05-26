@@ -2,7 +2,7 @@ import requests
 import time
 import random
 
-TOKEN = "8241926278:AAFSqaiWkRWONyK6q3wYDZ9f0uMUE1vVo"
+TOKEN = "TOKEN = "8241926278:AAFSqaiWkRWONyK6q3wYbKb1AYdZOp7A3Ec"
 CHAT_ID = "@branppromo"
 
 buscas = [
