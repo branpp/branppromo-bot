@@ -2,13 +2,16 @@ import requests
 import time
 import random
 
-TOKEN = "TOKEN = "8241926278:AAFSqaiWkRWONyK6q3wYbKb1AYdZOp7A3Ec"
+TOKEN = "8241926278:AAFSqaiWkRWONyK6q3wYbKb1AYdZOp7A3Ec"
 CHAT_ID = "@branppromo"
 
 buscas = [
-    "iphone", "samsung", "xiaomi", "motorola", "ssd", "monitor gamer",
-    "cueca", "meia", "camisa", "camisa de time", "tenis nike",
-    "air fryer", "perfume", "notebook", "mouse gamer", "fone bluetooth"
+    "iphone", "samsung", "xiaomi", "motorola",
+    "ssd", "monitor gamer", "notebook", "pc gamer",
+    "mouse gamer", "teclado mecanico", "headset gamer",
+    "cueca", "meia", "camisa", "camisa de time",
+    "tenis nike", "tenis adidas", "air fryer",
+    "perfume", "smart tv", "jbl", "mochila"
 ]
 
 enviados = set()
@@ -39,7 +42,11 @@ def enviar_produto(produto):
     if imagem:
         requests.post(
             f"https://api.telegram.org/bot{TOKEN}/sendPhoto",
-            data={"chat_id": CHAT_ID, "photo": imagem, "caption": texto}
+            data={
+                "chat_id": CHAT_ID,
+                "photo": imagem,
+                "caption": texto
+            }
         )
     else:
         enviar_texto(texto)
@@ -58,8 +65,8 @@ while True:
         dados = resposta.json()
         produtos = dados.get("results", [])
 
-        if len(produtos) == 0:
-            enviar_texto(f"⚠️ Nenhum produto encontrado para: {pesquisa}")
+        if not produtos:
+            print(f"Nenhum produto encontrado para: {pesquisa}")
             time.sleep(10)
             continue
 
