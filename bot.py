@@ -1,156 +1,132 @@
 import requests
+from telegram import Bot
 import time
 import random
 
-TOKEN = "8241926278:AAFSqaiWkRWONyK6q3wYbKb1AYdZOp7A3Ec"
+TOKEN = "8241926278:AAFSqaiWkRWONyK6q3wYDZ9f0uMUE1vVo"
 CHAT_ID = "@branppromo"
 
+bot = Bot(token=TOKEN)
+
 buscas = [
-
-    # CELULARES
-    "iphone", "iphone 15", "iphone 16",
-    "samsung", "xiaomi", "motorola",
-
-    # INFORMÁTICA
-    "notebook", "pc gamer", "ssd",
-    "placa de video", "monitor gamer",
-    "memoria ram", "processador ryzen",
-
-    # PERIFÉRICOS
-    "mouse gamer", "teclado mecanico",
+    "ssd",
+    "memoria ram",
+    "processador",
+    "placa de video",
+    "fone bluetooth",
     "headset gamer",
-
-    # CONSOLES
-    "ps5", "xbox", "nintendo switch",
-
-    # TV E ELETRÔNICOS
-    "smart tv", "jbl", "airpods",
-    "apple watch", "tablet",
-
-    # CASA
-    "air fryer", "cafeteira",
-    "microondas", "geladeira",
-
-    # ROUPAS
-    "camisa nike", "camisa adidas",
-    "camiseta", "bermuda",
-    "calca jeans", "moletom",
-
-    # FUTEBOL
-    "camisa de time", "camisa flamengo",
-    "camisa corinthians", "camisa bahia",
-
-    # ROUPAS ÍNTIMAS
-    "cueca", "cueca boxer",
-    "meia", "kit meia",
-
-    # TÊNIS
-    "tenis nike", "tenis adidas",
-    "tenis mizuno",
-
-    # PERFUMES
-    "perfume masculino",
-    "perfume feminino",
-    "malbec",
-
-    # ACESSÓRIOS
-    "relogio masculino",
-    "mochila",
-
-    # ALEATÓRIOS
-    "drone", "camera",
-    "bicicleta", "lego",
-    "funko pop"
+    "mouse gamer",
+    "teclado mecanico",
+    "monitor gamer",
+    "cadeira gamer",
+    "camisa",
+    "camisa nike",
+    "camisa adidas",
+    "camisa de time",
+    "cueca",
+    "meia",
+    "tenis nike",
+    "tenis adidas",
+    "smartphone",
+    "iphone",
+    "samsung",
+    "xiaomi",
+    "tv samsung",
+    "notebook gamer",
+    "ps5",
+    "xbox",
+    "controle ps5",
+    "air fryer",
+    "geladeira",
+    "perfume",
+    "relogio",
+    "oculos",
+    "moletom",
+    "shorts",
+    "bermuda",
+    "kit roupa",
+    "caixa de som",
+    "echo dot",
+    "alexa",
+    "cadeira",
+    "mesa gamer"
 ]
 
-def enviar_texto(texto):
+enviados = set()
 
-    requests.post(
-        f"https://api.telegram.org/bot{TOKEN}/sendMessage",
-        data={
-            "chat_id": CHAT_ID,
-            "text": texto
-        }
-    )
+def enviar_produto(produto):
+    nome = produto["title"]
+    preco = produto["price"]
+    link = produto["permalink"]
+    imagem = produto.get("thumbnail", "")
 
-def enviar_produto(nome, preco, antigo, link, imagem):
+    antigo = produto.get("original_price")
+
+    desconto_texto = ""
 
     if antigo and antigo > preco:
+        desconto = int(((antigo - preco) / antigo) * 100)
+        desconto_texto = f"\n🔥 Desconto: {desconto}% OFF"
 
-        desconto = ((antigo - preco) / antigo) * 100
+    mensagem = f"""
+🛒 {nome}
 
-        texto = f"""
-🔥 PROMOÇÃO ENCONTRADA
+💰 Preço: R$ {preco}
+{desconto_texto}
 
-📦 {nome}
-
-💸 DE: R$ {antigo}
-✅ POR: R$ {preco}
-
-🔥 {desconto:.0f}% OFF
-
-🛒 COMPRAR:
-{link}
+🔗 {link}
 """
-
-    else:
-
-        texto = f"""
-🛍️ ACHADINHO DO MERCADO LIVRE
-
-📦 {nome}
-
-💰 PREÇO: R$ {preco}
-
-🛒 COMPRAR:
-{link}
-"""
-
-    requests.post(
-        f"https://api.telegram.org/bot{TOKEN}/sendPhoto",
-        data={
-            "chat_id": CHAT_ID,
-            "photo": imagem,
-            "caption": texto
-        }
-    )
-
-enviar_texto("✅ Bot ligado! Procurando produtos...")
-
-while True:
 
     try:
+        bot.send_photo(
+            chat_id=CHAT_ID,
+            photo=imagem,
+            caption=mensagem
+        )
+    except:
+        bot.send_message(
+            chat_id=CHAT_ID,
+            text=mensagem
+        )
 
+bot.send_message(
+    chat_id=CHAT_ID,
+    text="✅ Bot ligado! Procurando produtos no Mercado Livre..."
+)
+
+while True:
+    try:
         pesquisa = random.choice(buscas)
 
-        url = f"https://api.mercadolibre.com/sites/MLB/search?q={pesquisa}&limit=10"
+        url = f"https://api.mercadolibre.com/sites/MLB/search?q={pesquisa}"
 
         resposta = requests.get(url)
 
         dados = resposta.json()
 
-        produtos = dados["results"]
+        produtos = dados.get("results", [])
 
-        for produto in produtos[:3]:
+        if not produtos:
+            print(f"Nenhum produto encontrado para: {pesquisa}")
+            time.sleep(10)
+            continue
 
-            nome = produto.get("title", "Produto")
-            preco = produto.get("price", "0")
-            antigo = produto.get("original_price")
-            link = produto.get("permalink", "")
-            imagem = produto.get("thumbnail", "")
+        random.shuffle(produtos)
 
-            enviar_produto(
-                nome,
-                preco,
-                antigo,
-                link,
-                imagem
-            )
+        for produto in produtos[:5]:
 
-            time.sleep(15)
+            produto_id = produto["id"]
+
+            if produto_id in enviados:
+                continue
+
+            enviados.add(produto_id)
+
+            enviar_produto(produto)
+
+            time.sleep(10)
 
     except Exception as erro:
-
-        enviar_texto(f"⚠️ Erro: {erro}")
+        print("Erro:", erro)
 
     time.sleep(10)
