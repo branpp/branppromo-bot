@@ -1,50 +1,72 @@
 import requests
 import time
+import random
 
 TOKEN = "8241926278:AAFSqaiWkRWONyK6q3wYbKb1AYdZOp7A3Ec"
 CHAT_ID = "@branppromo"
 
-def enviar_mensagem(texto):
-    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-    requests.post(url, data={"chat_id": CHAT_ID, "text": texto})
+buscas = [
+    "iphone", "samsung", "xiaomi", "motorola",
+    "notebook", "notebook gamer", "pc gamer",
+    "placa de video", "rtx 4060", "ssd", "memoria ram",
+    "processador ryzen", "monitor gamer", "teclado mecanico",
+    "mouse gamer", "headset gamer", "cadeira gamer",
+    "ps5", "xbox", "nintendo switch",
+    "smart tv", "tv samsung", "tv lg",
+    "air fryer", "cafeteira", "microondas",
+    "apple watch", "airpods", "caixa jbl",
+    "perfume", "tenis nike", "tenis adidas",
+    "camisa futebol", "kit gamer",
+    "drone", "camera", "gopro",
+    "bicicleta", "patinete eletrico",
+    "tablet", "ipad"
+]
 
-while True:
-    try:
-        url = "https://api.mercadolibre.com/sites/MLB/search?q=iphone"
+def enviar_promocao(nome, preco, antigo, desconto, link, imagem):
+    texto = f"""
+🔥 PROMOÇÃO ENCONTRADA
 
-        dados = requests.get(url).json()
-
-        for produto in dados["results"][:10]:
-
-            nome = produto["title"]
-            preco = produto["price"]
-            antigo = produto.get("original_price")
-            link = produto["permalink"]
-
-            if antigo and antigo > preco:
-
-                desconto = ((antigo - preco) / antigo) * 100
-
-                if desconto >= 20:
-
-                    mensagem = f"""
-🔥 PROMOÇÃO DETECTADA
-
-📱 {nome}
+📦 {nome}
 
 💸 DE: R$ {antigo}
 ✅ POR: R$ {preco}
 
-🔥 {desconto:.0f}% OFF
+🔥 DESCONTO: {desconto:.0f}% OFF
 
-🛒 {link}
+🛒 COMPRAR:
+{link}
 """
 
-                    enviar_mensagem(mensagem)
+    url = f"https://api.telegram.org/bot{TOKEN}/sendPhoto"
 
-        print("Verificando promoções...")
+    requests.post(url, data={
+        "chat_id": CHAT_ID,
+        "photo": imagem,
+        "caption": texto
+    })
+
+while True:
+    try:
+        pesquisa = random.choice(buscas)
+        url = f"https://api.mercadolibre.com/sites/MLB/search?q={pesquisa}"
+
+        dados = requests.get(url).json()
+
+        for produto in dados["results"][:10]:
+            nome = produto["title"]
+            preco = produto["price"]
+            antigo = produto.get("original_price")
+            link = produto["permalink"]
+            imagem = produto["thumbnail"]
+
+            if antigo and antigo > preco:
+                desconto = ((antigo - preco) / antigo) * 100
+
+                if desconto >= 10:
+                    enviar_promocao(nome, preco, antigo, desconto, link, imagem)
+                    time.sleep(15)
 
     except Exception as erro:
         print("Erro:", erro)
 
-    time.sleep(3600)
+    time.sleep(1800)
