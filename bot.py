@@ -23,10 +23,6 @@ buscas = [
     "jbl"
 ]
 
-headers = {
-    "User-Agent": "Mozilla/5.0"
-}
-
 enviados = set()
 
 def enviar(texto):
@@ -39,6 +35,7 @@ def enviar(texto):
     )
 
 def enviar_produto(produto):
+
     nome = produto.get("title", "Produto")
     preco = produto.get("price", "Consultar")
     link = produto.get("permalink", "")
@@ -56,7 +53,7 @@ def enviar_produto(produto):
 
     enviar(texto)
 
-enviar("✅ Bot ligado com correção 403!")
+enviar("✅ Bot ligado com correção definitiva!")
 
 while True:
 
@@ -68,13 +65,22 @@ while True:
             "https://api.mercadolibre.com/sites/MLB/search",
             params={
                 "q": pesquisa,
-                "limit": 5
+                "limit": 10
             },
-            headers=headers,
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36",
+                "Accept": "application/json",
+                "Accept-Language": "pt-BR,pt;q=0.9"
+            },
             timeout=20
         )
 
         enviar(f"🔎 Buscando: {pesquisa}")
+
+        if resposta.status_code != 200:
+            enviar(f"⚠️ Status API: {resposta.status_code}")
+            time.sleep(10)
+            continue
 
         dados = resposta.json()
 
@@ -85,7 +91,9 @@ while True:
             time.sleep(10)
             continue
 
-        for produto in produtos:
+        random.shuffle(produtos)
+
+        for produto in produtos[:3]:
 
             produto_id = produto.get("id")
 
