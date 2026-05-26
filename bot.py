@@ -1,4 +1,5 @@
 import requests
+from bs4 import BeautifulSoup
 import time
 import random
 
@@ -23,6 +24,10 @@ buscas = [
     "jbl"
 ]
 
+headers = {
+    "User-Agent": "Mozilla/5.0"
+}
+
 enviados = set()
 
 def enviar(texto):
@@ -34,26 +39,7 @@ def enviar(texto):
         }
     )
 
-def enviar_produto(produto):
-
-    nome = produto.get("title", "Produto")
-    preco = produto.get("price", "Consultar")
-    link = produto.get("permalink", "")
-
-    texto = f"""
-🛍️ ACHADINHO DO MERCADO LIVRE
-
-📦 {nome}
-
-💰 PREÇO: R$ {preco}
-
-🛒 COMPRAR:
-{link}
-"""
-
-    enviar(texto)
-
-enviar("✅ Bot ligado com correção definitiva!")
+enviar("✅ Bot scraping ligado!")
 
 while True:
 
@@ -61,50 +47,39 @@ while True:
 
         pesquisa = random.choice(buscas)
 
-        resposta = requests.get(
-            "https://api.mercadolibre.com/sites/MLB/search",
-            params={
-                "q": pesquisa,
-                "limit": 10
-            },
-            headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36",
-                "Accept": "application/json",
-                "Accept-Language": "pt-BR,pt;q=0.9"
-            },
-            timeout=20
-        )
+        url = f"https://lista.mercadolivre.com.br/{pesquisa}"
 
-        enviar(f"🔎 Buscando: {pesquisa}")
+        resposta = requests.get(url, headers=headers)
 
-        if resposta.status_code != 200:
-            enviar(f"⚠️ Status API: {resposta.status_code}")
+        soup = BeautifulSoup(resposta.text, "html.parser")
+
+        links = soup.select("a.poly-component__title")
+
+        if not links:
+            enviar(f"⚠️ Nenhum produto encontrado para: {pesquisa}")
             time.sleep(10)
             continue
 
-        dados = resposta.json()
+        produto = random.choice(links)
 
-        produtos = dados.get("results", [])
+        nome = produto.text.strip()
+        link = produto.get("href")
 
-        if not produtos:
-            enviar("⚠️ Nenhum produto encontrado.")
-            time.sleep(10)
+        if link in enviados:
             continue
 
-        random.shuffle(produtos)
+        enviados.add(link)
 
-        for produto in produtos[:3]:
+        mensagem = f"""
+🛍️ ACHADINHO DO MERCADO LIVRE
 
-            produto_id = produto.get("id")
+📦 {nome}
 
-            if produto_id in enviados:
-                continue
+🛒 COMPRAR:
+{link}
+"""
 
-            enviados.add(produto_id)
-
-            enviar_produto(produto)
-
-            time.sleep(10)
+        enviar(mensagem)
 
     except Exception as erro:
 
