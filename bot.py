@@ -1,31 +1,33 @@
 import requests
-from telegram import Bot
 import time
 
 TOKEN = "8241926278:AAFSqaiWkRWONyK6q3wYbKb1AYdZOp7A3Ec"
 CHAT_ID = "@branppromo"
 
-bot = Bot(token=TOKEN)
+def enviar_mensagem(texto):
+    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+    requests.post(url, data={"chat_id": CHAT_ID, "text": texto})
 
 while True:
+    try:
+        url = "https://api.mercadolibre.com/sites/MLB/search?q=iphone"
 
-    url = "https://api.mercadolibre.com/sites/MLB/search?q=iphone"
+        dados = requests.get(url).json()
 
-    dados = requests.get(url).json()
+        for produto in dados["results"][:10]:
 
-    for produto in dados["results"][:5]:
+            nome = produto["title"]
+            preco = produto["price"]
+            antigo = produto.get("original_price")
+            link = produto["permalink"]
 
-        nome = produto["title"]
-        preco = produto["price"]
-        antigo = produto.get("original_price")
+            if antigo and antigo > preco:
 
-        if antigo and antigo > preco:
+                desconto = ((antigo - preco) / antigo) * 100
 
-            desconto = ((antigo - preco) / antigo) * 100
+                if desconto >= 20:
 
-            if desconto >= 20:
-
-                mensagem = f"""
+                    mensagem = f"""
 🔥 PROMOÇÃO DETECTADA
 
 📱 {nome}
@@ -35,14 +37,14 @@ while True:
 
 🔥 {desconto:.0f}% OFF
 
-🛒 {produto['permalink']}
+🛒 {link}
 """
 
-                bot.send_message(
-                    chat_id=CHAT_ID,
-                    text=mensagem
-                )
+                    enviar_mensagem(mensagem)
 
-    print("Verificando promoções...")
+        print("Verificando promoções...")
+
+    except Exception as erro:
+        print("Erro:", erro)
 
     time.sleep(3600)
